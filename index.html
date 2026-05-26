@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SonoCube — AI Cardiac EF Analysis</title>
+  <meta name="description" content="심장초음파 영상에서 박출계수(EF)를 자동 추정하는 연구용 macOS 소프트웨어. Research use only." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f0f;
+      --bg-2:      #161616;
+      --bg-3:      #1e1e1e;
+      --surface:   #242424;
+      --border:    #2e2e2e;
+      --text:      #e8e8e8;
+      --text-muted:#888;
+      --text-dim:  #555;
+      --cyan:      #00b4cc;
+      --cyan-dark: #0096aa;
+      --green:     #52c27a;
+      --amber:     #e8a217;
+      --red:       #e05252;
+      --radius:    10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 16px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px;
+      height: 60px;
+      background: rgba(15,15,15,.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 17px; font-weight: 700; letter-spacing: .5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--cyan); }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a {
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      padding: 7px 18px; border-radius: 6px;
+      background: var(--cyan); color: #000; font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: background .15s;
+    }
+    .nav-cta:hover { background: var(--cyan-dark); }
+
+    /* ── LAYOUT ── */
+    section { padding: 96px 48px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan); margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(26px, 4vw, 38px); font-weight: 700; line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px; color: var(--text-muted); max-width: 560px;
+      margin-bottom: 56px;
+    }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding-top: 120px; padding-bottom: 80px;
+      max-width: 1100px; margin: 0 auto; padding-left: 48px; padding-right: 48px;
+    }
+    .hero-layout {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px; border-radius: 20px;
+      background: rgba(0,180,204,.12); border: 1px solid rgba(0,180,204,.25);
+      font-size: 12px; color: var(--cyan); margin-bottom: 24px;
+      width: fit-content;
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--cyan); animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: .3; }
+    }
+    .hero-title {
+      font-size: clamp(32px, 5vw, 52px); font-weight: 700; line-height: 1.15;
+      margin-bottom: 8px;
+    }
+    .hero-title .accent { color: var(--cyan); }
+    .hero-subtitle-en {
+      font-size: 16px; color: var(--text-muted); margin-bottom: 24px;
+      font-weight: 400;
+    }
+    .hero-sub {
+      font-size: 16px; color: var(--text-muted); line-height: 1.8;
+      margin-bottom: 36px;
+    }
+    .hero-sub strong { color: var(--text); font-weight: 500; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 8px;
+      background: var(--cyan); color: #000; font-weight: 700; font-size: 14px;
+      text-decoration: none; transition: background .15s, transform .1s;
+    }
+    .btn-primary:hover { background: var(--cyan-dark); transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 8px;
+      background: transparent; color: var(--text); font-weight: 500; font-size: 14px;
+      border: 1px solid var(--border); text-decoration: none; transition: border-color .15s;
+    }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+    .hero-disclaimer {
+      font-size: 12px; color: var(--text-dim);
+      display: flex; align-items: flex-start; gap: 6px;
+      padding: 10px 14px; border-radius: 6px;
+      border: 1px solid #2a1a00; background: rgba(255,152,0,.04);
+    }
+    .hero-disclaimer .warn-icon { color: var(--amber); flex-shrink: 0; margin-top: 1px; }
+
+    /* Hero visual */
+    .hero-visual {
+      position: relative;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .app-mockup {
+      width: 100%; max-width: 520px;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .mockup-titlebar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 16px;
+      background: #1a1a1a; border-bottom: 1px solid var(--border);
+    }
+    .dot-red   { width:10px;height:10px;border-radius:50%;background:#ff5f57; }
+    .dot-amber { width:10px;height:10px;border-radius:50%;background:#febc2e; }
+    .dot-green { width:10px;height:10px;border-radius:50%;background:#28c840; }
+    .mockup-titlebar-label {
+      margin-left: auto; margin-right: auto;
+      font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;
+    }
+    .mockup-body { padding: 20px; }
+
+    /* EF Display Mock */
+    .mock-ef-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .mock-stat {
+      background: var(--surface); border-radius: 8px; padding: 12px;
+      text-align: center; border: 1px solid var(--border);
+    }
+    .mock-stat-label { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+    .mock-stat-value { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .mock-stat-unit  { font-size: 11px; color: var(--text-muted); }
+
+    /* EF Bar */
+    .mock-ef-bar-wrap { margin-bottom: 16px; }
+    .mock-ef-bar-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+    .mock-ef-track {
+      height: 24px; border-radius: 12px; overflow: hidden;
+      display: flex; position: relative;
+      border: 1px solid var(--border);
+    }
+    .ef-zone-red   { flex: 2; background: rgba(224,82,82,.25); }
+    .ef-zone-amber { flex: 1.5; background: rgba(232,162,23,.25); }
+    .ef-zone-green { flex: 2.5; background: rgba(82,194,122,.25); }
+    .ef-marker {
+      position: absolute; top: 2px; bottom: 2px; width: 3px;
+      background: #fff; border-radius: 2px;
+      left: calc(62% - 1.5px);
+      box-shadow: 0 0 8px rgba(255,255,255,.5);
+    }
+    .ef-zone-labels {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: var(--text-dim); margin-top: 4px;
+    }
+
+    /* Stability */
+    .mock-stability {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 7px;
+      background: rgba(82,194,122,.08); border: 1px solid rgba(82,194,122,.2);
+      margin-bottom: 14px;
+    }
+    .stability-dot { width:8px;height:8px;border-radius:50%;background:var(--green); }
+    .stability-text { font-size: 12px; color: var(--green); font-weight: 600; }
+    .stability-sub  { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+
+    /* Frame chart placeholder */
+    .mock-chart {
+      height: 64px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface); overflow: hidden; position: relative;
+    }
+    .mock-chart svg { width: 100%; height: 100%; }
+
+    /* ── PROBLEM ── */
+    #problem { background: var(--bg); }
+    #problem > .section-inner { max-width: 1100px; margin: 0 auto; }
+    .problem-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    .problem-card {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+    }
+    .problem-num {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      color: var(--text-dim); margin-bottom: 12px;
+    }
+    .problem-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+    .problem-card p  { font-size: 14px; color: var(--text-muted); line-height: 1.75; }
+
+    /* ── SOLUTION ── */
+    #solution { background: var(--bg-2); }
+    .flow-steps {
+      display: grid; grid-template-columns: 1fr 32px 1fr 32px 1fr;
+      align-items: center; gap: 0;
+      margin-bottom: 56px;
+    }
+    .flow-step {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 18px; text-align: center;
+    }
+    .flow-step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--cyan); color: #000; font-weight: 700; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px;
+    }
+    .flow-step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .flow-step-sub   { font-size: 12px; color: var(--text-muted); }
+    .flow-arrow { text-align: center; color: var(--text-dim); font-size: 20px; }
+
+    .solution-steps { display: flex; flex-direction: column; gap: 32px; }
+    .solution-step {
+      display: grid; grid-template-columns: 80px 1fr; gap: 24px;
+      padding: 28px; background: var(--surface); border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .step-num-big {
+      font-size: 40px; font-weight: 700; color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace; line-height: 1; padding-top: 4px;
+    }
+    .solution-step h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .solution-step p  { font-size: 14px; color: var(--text-muted); line-height: 1.8; }
+
+    /* ── FEATURES ── */
+    #features { background: var(--bg); }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 26px;
+      transition: border-color .2s;
+    }
+    .feature-card:hover { border-color: rgba(0,180,204,.35); }
+    .feature-icon {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: rgba(0,180,204,.1); display: flex; align-items: center;
+      justify-content: center; margin-bottom: 14px; font-size: 20px;
+    }
+    .feature-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p  { font-size: 13.5px; color: var(--text-muted); line-height: 1.75; }
+
+    /* ── BACKGROUND ── */
+    #background { background: var(--bg-2); }
+    .bg-content {
+      display: grid; grid-template-columns: 1fr 360px; gap: 64px; align-items: start;
+    }
+    .bg-text p { font-size: 15px; color: var(--text-muted); line-height: 1.9; margin-bottom: 16px; }
+    .bg-text p:last-child { margin-bottom: 0; }
+    .tech-stack {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+    }
+    .tech-stack h4 {
+      font-size: 12px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+    .tech-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .tech-item:last-child { border-bottom: none; }
+    .tech-key { color: var(--text-muted); }
+    .tech-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--cyan);
+    }
+
+    /* ── ROADMAP ── */
+    #roadmap { background: var(--bg); }
+    .roadmap-table {
+      width: 100%; border-collapse: collapse;
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .roadmap-table th {
+      background: var(--surface); padding: 14px 20px;
+      font-size: 12px; font-weight: 600; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text-muted);
+      text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .roadmap-table td {
+      padding: 16px 20px; font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .roadmap-table tr:last-child td { border-bottom: none; }
+    .roadmap-table tr:first-child td { background: var(--bg-2); }
+    .version-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-current { background: rgba(0,180,204,.15); color: var(--cyan); }
+    .badge-planned { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+    .current-dot { width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:pulse 2s infinite; }
+
+    /* ── DISCLAIMER ── */
+    #disclaimer {
+      background: var(--bg-2);
+      padding: 64px 48px;
+    }
+    .disclaimer-box {
+      max-width: 860px; margin: 0 auto;
+      background: #1a1200; border: 1px solid #3d2e00;
+      border-radius: 12px; padding: 36px 40px;
+    }
+    .disclaimer-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 24px;
+    }
+    .disclaimer-header .warn-big { font-size: 22px; }
+    .disclaimer-header h2 { font-size: 18px; font-weight: 700; color: #ffb300; }
+    .disclaimer-body p {
+      font-size: 14px; line-height: 1.85;
+      color: #c8a850; margin-bottom: 12px;
+    }
+    .disclaimer-body p:last-child { margin-bottom: 0; }
+    .disclaimer-body .en {
+      font-size: 13px; color: #8a7040;
+      border-top: 1px solid #3d2e00; padding-top: 14px; margin-top: 16px;
+    }
+
+    /* ── DOWNLOAD ── */
+    #download { background: var(--bg); text-align: center; }
+    #download .section-title { margin-bottom: 12px; }
+    .download-sub { font-size: 16px; color: var(--text-muted); margin-bottom: 40px; }
+    .download-buttons {
+      display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .btn-download {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px; border-radius: 10px;
+      background: var(--cyan); color: #000; font-size: 15px; font-weight: 700;
+      text-decoration: none; transition: background .15s, transform .1s;
+    }
+    .btn-download:hover { background: var(--cyan-dark); transform: translateY(-2px); }
+    .btn-github {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px; border-radius: 10px;
+      background: transparent; color: var(--text); font-size: 15px; font-weight: 600;
+      border: 1px solid var(--border); text-decoration: none; transition: border-color .15s;
+    }
+    .btn-github:hover { border-color: var(--text-muted); }
+
+    .install-guide {
+      max-width: 600px; margin: 0 auto 40px; text-align: left;
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px 28px;
+    }
+    .install-guide h4 {
+      font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px;
+    }
+    .install-guide p { font-size: 13.5px; color: var(--text-muted); margin-bottom: 10px; }
+    .code-block {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 14px; margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      color: var(--cyan); overflow-x: auto;
+    }
+
+    .sysreq {
+      max-width: 600px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left;
+    }
+    .sysreq-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      font-size: 13.5px; color: var(--text-muted);
+    }
+    .sysreq-item .check { color: var(--green); flex-shrink: 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg-2); border-top: 1px solid var(--border);
+      padding: 40px 48px; text-align: center;
+    }
+    .footer-logo { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .footer-logo span { color: var(--cyan); }
+    .footer-tagline { font-size: 12px; color: var(--amber); margin-bottom: 24px; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; }
+    .footer-links a {
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+    }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { font-size: 12px; color: var(--text-dim); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      section, #hero, #disclaimer, footer {
+        padding-left: 24px; padding-right: 24px;
+      }
+      .hero-layout { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .problem-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .flow-steps { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); }
+      .bg-content { grid-template-columns: 1fr; }
+      .solution-step { grid-template-columns: 1fr; }
+      .step-num-big { font-size: 28px; }
+    }
+    @media (max-width: 600px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .sysreq { grid-template-columns: 1fr; }
+      .download-buttons { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a class="nav-logo" href="#"><span>Sono</span>Cube</a>
+  <div class="nav-links">
+    <a href="#problem">문제 정의</a>
+    <a href="#solution">솔루션</a>
+    <a href="#features">기능</a>
+    <a href="#roadmap">로드맵</a>
+    <a href="#download">다운로드</a>
+  </div>
+  <a class="nav-cta" href="#download">다운로드</a>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-layout">
+    <div>
+      <div class="hero-badge">
+        <div class="dot"></div>
+        macOS v1.2.0 · Research Software
+      </div>
+
+      <h1 class="hero-title">
+        AI-Powered<br />
+        Cardiac <span class="accent">EF</span> Analysis
+      </h1>
+      <p class="hero-subtitle-en">심장초음파 영상에서 박출계수를 자동으로 추정합니다</p>
+
+      <p class="hero-sub">
+        <strong>AVI · DICOM 파일을 드래그하면</strong><br />
+        프레임별 AI 추론 → EF 통계 → PDF 리포트까지<br />
+        연구자의 반복 작업을 줄여줍니다
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn-primary" href="#download">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          macOS용 다운로드 (v1.2.0)
+        </a>
+        <a class="btn-secondary" href="https://github.com/medix-ai/sonocube" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38l-.01-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.2c0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub에서 보기
+        </a>
+      </div>
+
+      <div class="hero-disclaimer">
+        <span class="warn-icon">⚠</span>
+        <span>이 소프트웨어는 연구 목적으로만 사용되며 진단 목적으로 사용할 수 없습니다. Research use only. Not intended for clinical diagnosis.</span>
+      </div>
+    </div>
+
+    <!-- App Mockup -->
+    <div class="hero-visual">
+      <div class="app-mockup">
+        <div class="mockup-titlebar">
+          <div class="dot-red"></div>
+          <div class="dot-amber"></div>
+          <div class="dot-green"></div>
+          <div class="mockup-titlebar-label">SonoCube — Study Analysis</div>
+        </div>
+        <div class="mockup-body">
+          <div class="mock-ef-row">
+            <div class="mock-stat">
+              <div class="mock-stat-label">EF (Median)</div>
+              <div class="mock-stat-value" style="color:#52c27a">62.4</div>
+              <div class="mock-stat-unit">%</div>
+            </div>
+            <div class="mock-stat">
+              <div class="mock-stat-label">Std Dev</div>
+              <div class="mock-stat-value" style="color:#e8a217">3.1</div>
+              <div class="mock-stat-unit">%</div>
+            </div>
+            <div class="mock-stat">
+              <div class="mock-stat-label">Frames</div>
+              <div class="mock-stat-value" style="color:#00b4cc">48</div>
+              <div class="mock-stat-unit">fr</div>
+            </div>
+          </div>
+
+          <div class="mock-ef-bar-wrap">
+            <div class="mock-ef-bar-label">EF Range Reference</div>
+            <div class="mock-ef-track">
+              <div class="ef-zone-red"></div>
+              <div class="ef-zone-amber"></div>
+              <div class="ef-zone-green"></div>
+              <div class="ef-marker"></div>
+            </div>
+            <div class="ef-zone-labels">
+              <span style="color:#e05252">Reduced &lt;40%</span>
+              <span style="color:#e8a217">40–54%</span>
+              <span style="color:#52c27a">Normal ≥55%</span>
+            </div>
+          </div>
+
+          <div class="mock-stability">
+            <div class="stability-dot"></div>
+            <div class="stability-text">HIGH Stability</div>
+            <div class="stability-sub">Std Dev 3.1% · 48 frames</div>
+          </div>
+
+          <div class="mock-chart">
+            <svg viewBox="0 0 480 64" preserveAspectRatio="none">
+              <polyline
+                points="0,40 20,38 40,36 60,34 80,32 100,30 120,35 140,38 160,36 180,30 200,28 220,26 240,30 260,34 280,32 300,28 320,26 340,30 360,28 380,26 400,28 420,30 440,28 460,26 480,24"
+                fill="none" stroke="#00b4cc" stroke-width="1.5" opacity=".8"
+              />
+              <polyline
+                points="0,40 20,38 40,36 60,34 80,32 100,30 120,35 140,38 160,36 180,30 200,28 220,26 240,30 260,34 280,32 300,28 320,26 340,30 360,28 380,26 400,28 420,30 440,28 460,26 480,24"
+                fill="url(#chartGrad)" stroke="none" opacity=".15"
+              />
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00b4cc"/>
+                  <stop offset="100%" stop-color="transparent"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROBLEM ── -->
+<section id="problem" style="background:var(--bg-2)">
+  <div class="section-label">Why SonoCube</div>
+  <h2 class="section-title">기존 심초음파 EF 분석의 한계</h2>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="problem-num">01</div>
+      <h3>판독자 의존성</h3>
+      <p>EF는 Simpson's biplane 방법으로 수동 측정합니다. 측정자의 숙련도와 집중도에 따라 결과가 달라지며, 동일 환자·동일 영상이어도 판독자 간 편차(inter-observer variability)가 존재합니다.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">02</div>
+      <h3>반복 작업의 시간 비용</h3>
+      <p>연구 프로젝트에서 수십~수백 건의 echo 영상을 분석할 때, 각 케이스마다 ED/ES 프레임을 직접 찾고 경계를 그리고 계산해야 합니다. 반복적인 수동 분석은 연구 속도를 제한하는 병목이 됩니다.</p>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">03</div>
+      <h3>데이터 기록과 재현성</h3>
+      <p>분석 결과가 개인 파일이나 메모 형태로 남으면 추후 재현 검증이 어렵고, 연구 협력 시 데이터 공유가 번거롭습니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── SOLUTION ── -->
+<section id="solution" style="background:var(--bg)">
+  <div class="section-label">How It Works</div>
+  <h2 class="section-title">SonoCube가 하는 일</h2>
+  <p class="section-sub">복잡한 설치 없이, 영상 파일 하나로 시작합니다</p>
+
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-title">영상 드래그 앤 드롭</div>
+      <div class="flow-step-sub">AVI · DICOM 지원</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-title">AI 프레임별 추론</div>
+      <div class="flow-step-sub">ONNX 경량 모델</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-title">PDF 리포트 저장</div>
+      <div class="flow-step-sub">통계 + 시각화 포함</div>
+    </div>
+  </div>
+
+  <div class="solution-steps">
+    <div class="solution-step">
+      <div class="step-num-big">01</div>
+      <div>
+        <h3>파일 열기</h3>
+        <p>AVI, MP4, DICOM (.dcm) 파일을 앱에 드래그하거나 파일 선택 버튼으로 불러옵니다. 영상 뷰어에서 프레임을 미리 확인할 수 있습니다.</p>
+      </div>
+    </div>
+    <div class="solution-step">
+      <div class="step-num-big">02</div>
+      <div>
+        <h3>AI 분석 실행</h3>
+        <p>Space 키 또는 버튼 한 번으로 분석이 시작됩니다. ONNX 경량 모델이 모든 프레임에서 EF를 추론하고, 프레임별 추론 결과를 집계해 중앙값·평균·표준편차·범위를 계산합니다. 분석은 수십 프레임 기준 수 초 내에 완료됩니다.</p>
+      </div>
+    </div>
+    <div class="solution-step">
+      <div class="step-num-big">03</div>
+      <div>
+        <h3>결과 확인 및 리포트</h3>
+        <p>EF 수치, 임상 참고 범위 시각화, 예측 안정성 지표를 즉시 확인합니다. PDF 리포트를 생성하면 EF 범위 바, 프레임 통계, 품질 경고가 포함됩니다. 케이스 히스토리는 앱 내에 자동 저장되어 이력 관리가 가능합니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section id="features" style="background:var(--bg-2)">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">주요 기능</h2>
+  <div class="features-grid">
+
+    <div class="feature-card">
+      <div class="feature-icon">🖥️</div>
+      <h3>인터넷 없이 로컬 실행</h3>
+      <p>외부 서버에 데이터를 전송하지 않습니다. 모든 추론은 로컬 CPU에서 실행되는 ONNX 모델로 처리됩니다. 환자 영상 데이터가 기기 밖으로 나가지 않습니다.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">❤️</div>
+      <h3>EF 범위를 직관적으로 확인</h3>
+      <p>결과 화면과 PDF 리포트 모두에서 EF 수치가 임상 참고 범위 위에 표시됩니다. Reduced (&lt;40%) / Mildly Reduced (40–54%) / Normal (≥55%) 구역을 색상으로 구분합니다.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>단일 수치가 아닌 분포로 보고</h3>
+      <p>프레임마다 추론된 EF 값의 표준편차를 기반으로 High / Medium / Low 안정성을 표시합니다. 안정성이 낮을 경우 수동 검토를 권고하는 경고가 함께 표시됩니다.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📄</div>
+      <h3>케이스마다 기록을 남깁니다</h3>
+      <p>분석 완료 즉시 PDF 리포트를 생성할 수 있습니다. EF 범위 바, 프레임 통계 테이블, 품질 경고, 분석 메타데이터가 포함된 라이트 테마 문서입니다.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">⚠️</div>
+      <h3>낮은 품질 영상을 자동으로 감지</h3>
+      <p>입력 영상의 프레임 수, 밝기 분포, EF 변동성을 분석해 품질 경고를 HIGH / MODERATE / INFO 심각도로 분류합니다. 각 경고에는 조치 방향이 함께 제시됩니다.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📁</div>
+      <h3>분석 이력 자동 저장</h3>
+      <p>모든 분석 결과는 자동으로 히스토리에 저장됩니다. 날짜, EF, 파일명으로 검색하고, 이전 케이스의 PDF를 바로 열거나 CSV로 내보낼 수 있습니다.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── BACKGROUND ── -->
+<section id="background" style="background:var(--bg)">
+  <div class="section-label">Background</div>
+  <h2 class="section-title">왜 SonoCube를 만들었나</h2>
+
+  <div class="bg-content">
+    <div class="bg-text">
+      <p>SonoCube는 임상 연구 현장에서 반복적인 echo 분석 작업을 줄이기 위해 연구팀이 직접 설계하고 개발한 연구용 소프트웨어입니다.</p>
+      <p>상용 echo 워크스테이션은 병원 PACS 시스템에 종속되어 있어 외부 연구 환경이나 멀티센터 연구에서 동일한 분석 파이프라인을 유지하기 어렵습니다. SonoCube는 표준 영상 파일(AVI/DICOM)만 있으면 어떤 환경에서도 동일한 AI 파이프라인으로 분석 결과를 재현할 수 있도록 설계되었습니다.</p>
+      <p>현재 버전은 EF 자동 추정에 집중하며, 향후 LV segmentation 연동을 통해 EDV/ESV 및 Simpson's biplane EF를 지원할 계획입니다.</p>
+    </div>
+
+    <div class="tech-stack">
+      <h4>Tech Stack</h4>
+      <div class="tech-item"><span class="tech-key">Language</span><span class="tech-val">Python 3.11</span></div>
+      <div class="tech-item"><span class="tech-key">GUI</span><span class="tech-val">PyQt5</span></div>
+      <div class="tech-item"><span class="tech-key">AI Inference</span><span class="tech-val">ONNX Runtime</span></div>
+      <div class="tech-item"><span class="tech-key">Acceleration</span><span class="tech-val">CoreML (Apple)</span></div>
+      <div class="tech-item"><span class="tech-key">Video</span><span class="tech-val">OpenCV</span></div>
+      <div class="tech-item"><span class="tech-key">Report</span><span class="tech-val">ReportLab</span></div>
+      <div class="tech-item"><span class="tech-key">Packaging</span><span class="tech-val">PyInstaller</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ROADMAP ── -->
+<section id="roadmap" style="background:var(--bg-2)">
+  <div class="section-label">Roadmap</div>
+  <h2 class="section-title">앞으로의 계획</h2>
+
+  <table class="roadmap-table">
+    <thead>
+      <tr>
+        <th>버전</th>
+        <th>목표</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="version-badge badge-current"><span class="current-dot"></span>v1.2 (현재)</span></td>
+        <td>EF 자동 추정, PDF 리포트, 케이스 히스토리</td>
+      </tr>
+      <tr>
+        <td><span class="version-badge badge-planned">v1.5 (예정)</span></td>
+        <td>LV segmentation 연동 → EDV/ESV → Simpson EF</td>
+      </tr>
+      <tr>
+        <td><span class="version-badge badge-planned">v2.0 (예정)</span></td>
+        <td>멀티케이스 배치 분석, EF 추이 시각화, DICOM SR 내보내기</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── DISCLAIMER ── -->
+<section id="disclaimer" style="padding: 64px 48px; max-width: 100%; background:var(--bg)">
+  <div class="disclaimer-box" style="max-width:860px;margin:0 auto;background:#1a1200;border:1px solid #3d2e00;border-radius:12px;padding:36px 40px;">
+    <div class="disclaimer-header" style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+      <span style="font-size:22px;">⚠</span>
+      <h2 style="font-size:18px;font-weight:700;color:#ffb300;">연구 목적 전용 소프트웨어</h2>
+    </div>
+    <div class="disclaimer-body">
+      <p style="font-size:14px;line-height:1.85;color:#c8a850;margin-bottom:12px;">이 소프트웨어는 학술 및 연구 목적으로만 개발되었습니다. 임상 진단, 치료 결정, 또는 의료 행위의 근거로 사용해서는 안 됩니다.</p>
+      <p style="font-size:14px;line-height:1.85;color:#c8a850;margin-bottom:12px;">표시되는 EF 수치는 AI 모델의 추론 결과이며, 공인된 의료기기로 측정된 수치와 동일하지 않습니다.</p>
+      <p style="font-size:14px;line-height:1.85;color:#c8a850;">Prediction stability(예측 안정성)는 프레임별 추론의 일관성을 나타내는 지표로, 임상적 신뢰도(clinical confidence)와 다른 개념입니다.</p>
+      <p style="font-size:13px;line-height:1.75;color:#8a7040;border-top:1px solid #3d2e00;padding-top:14px;margin-top:16px;">This software is intended for research use only. It is not a medical device and must not be used for clinical diagnosis.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── DOWNLOAD ── -->
+<section id="download" style="background:var(--bg-2);text-align:center">
+  <div class="section-label" style="text-align:center">Download</div>
+  <h2 class="section-title" style="text-align:center">다운로드</h2>
+  <p class="download-sub">Apple Silicon (M1/M2/M3) 및 Intel Mac 지원 · Universal Binary</p>
+
+  <div class="download-buttons">
+    <a class="btn-download" href="#" id="dmg-link">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      macOS 다운로드 (v1.2.0)
+    </a>
+    <a class="btn-github" href="https://github.com/medix-ai/sonocube" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38l-.01-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.2c0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub 소스코드
+    </a>
+  </div>
+
+  <div class="install-guide" style="max-width:600px;margin:0 auto 40px;text-align:left;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;">
+    <h4 style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:12px;">macOS 설치 안내</h4>
+    <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:10px;">macOS에서 처음 실행 시 보안 경고가 표시될 수 있습니다.<br />시스템 환경설정 → 개인 정보 보호 및 보안에서 허용하거나 터미널에서 아래 명령어를 실행하세요:</p>
+    <div class="code-block">xattr -rd com.apple.quarantine SonoCube.app</div>
+  </div>
+
+  <div class="sysreq" style="max-width:600px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;">
+    <div class="sysreq-item"><span class="check">✓</span><span>macOS 12 Monterey 이상</span></div>
+    <div class="sysreq-item"><span class="check">✓</span><span>Apple Silicon 또는 Intel Mac</span></div>
+    <div class="sysreq-item"><span class="check">✓</span><span>저장 공간 500MB 이상</span></div>
+    <div class="sysreq-item"><span class="check">✓</span><span>RAM 4GB 이상 권장</span></div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo"><span>Sono</span>Cube <span style="font-size:13px;color:var(--text-dim);font-weight:400;">v1.2.0</span></div>
+  <div class="footer-tagline">Research use only. Not for clinical diagnosis.</div>
+  <div class="footer-links">
+    <a href="https://github.com/medix-ai/sonocube" target="_blank" rel="noopener">GitHub</a>
+    <a href="#disclaimer">Disclaimer</a>
+    <a href="#download">Download</a>
+  </div>
+  <div class="footer-copy">© 2026 SonoCube Research Team</div>
+</footer>
+
+</body>
+</html>
