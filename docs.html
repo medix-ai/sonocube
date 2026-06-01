@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SonoCube — 기술 문서</title>
+  <meta name="description" content="SonoCube 기술 문서 — 모델 설계, 학습, 추론 파이프라인 전체 설명" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f0f;
+      --bg-2:      #161616;
+      --bg-3:      #1e1e1e;
+      --surface:   #242424;
+      --border:    #2e2e2e;
+      --text:      #e8e8e8;
+      --text-muted:#888;
+      --text-dim:  #555;
+      --cyan:      #00b4cc;
+      --cyan-dark: #0096aa;
+      --green:     #52c27a;
+      --amber:     #e8a217;
+      --red:       #e05252;
+      --radius:    8px;
+      --nav-h:     56px;
+      --toc-w:     240px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 40px; height: var(--nav-h);
+      background: rgba(15,15,15,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-back {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--text); }
+    .nav-sep { color: var(--text-dim); font-size: 16px; }
+    .nav-title {
+      font-size: 14px; font-weight: 600; color: var(--text);
+    }
+    .nav-badge {
+      margin-left: auto;
+      font-size: 11px; padding: 3px 10px; border-radius: 20px;
+      background: rgba(232,162,23,.12); border: 1px solid rgba(232,162,23,.25);
+      color: var(--amber);
+    }
+
+    /* ── LAYOUT ── */
+    .docs-layout {
+      display: flex;
+      padding-top: var(--nav-h);
+      min-height: 100vh;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      width: var(--toc-w);
+      flex-shrink: 0;
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      overflow-y: auto;
+      padding: 32px 20px 32px 28px;
+      border-right: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+    .toc::-webkit-scrollbar { width: 4px; }
+    .toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .toc-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+    .toc-list { list-style: none; }
+    .toc-list li { margin-bottom: 2px; }
+    .toc-list a {
+      display: block; padding: 5px 8px; border-radius: 5px;
+      font-size: 12.5px; color: var(--text-muted); text-decoration: none;
+      line-height: 1.4; transition: color .12s, background .12s;
+    }
+    .toc-list a:hover { color: var(--text); background: var(--surface); }
+    .toc-list a.active { color: var(--cyan); background: rgba(0,180,204,.08); }
+    .toc-sub { padding-left: 12px; }
+    .toc-sub a { font-size: 12px; color: var(--text-dim); padding: 3px 8px; }
+
+    /* ── MAIN ── */
+    .docs-main {
+      flex: 1;
+      max-width: 860px;
+      padding: 56px 64px 120px;
+    }
+
+    .docs-header { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .docs-header h1 {
+      font-size: 32px; font-weight: 700; margin-bottom: 10px; line-height: 1.2;
+    }
+    .docs-header h1 span { color: var(--cyan); }
+    .docs-header .tagline { font-size: 15px; color: var(--text-muted); margin-bottom: 16px; }
+    .docs-header .research-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 6px;
+      background: #1a1200; border: 1px solid #3d2e00;
+      font-size: 12px; color: var(--amber);
+    }
+
+    /* ── SECTIONS ── */
+    .docs-section { margin-bottom: 64px; }
+    .docs-section h2 {
+      font-size: 22px; font-weight: 700;
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .section-num {
+      font-size: 12px; font-weight: 600; letter-spacing: 1px;
+      color: var(--cyan); font-family: 'JetBrains Mono', monospace;
+      background: rgba(0,180,204,.08); padding: 2px 8px; border-radius: 4px;
+      border: 1px solid rgba(0,180,204,.2);
+    }
+    .docs-section h3 {
+      font-size: 16px; font-weight: 600;
+      margin: 28px 0 12px; color: var(--text);
+    }
+    .docs-section h4 {
+      font-size: 13.5px; font-weight: 600;
+      margin: 20px 0 8px; color: var(--text-muted);
+    }
+    .docs-section p {
+      font-size: 14.5px; color: var(--text-muted); line-height: 1.85;
+      margin-bottom: 14px;
+    }
+    .docs-section p strong { color: var(--text); font-weight: 600; }
+    .docs-section p code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      color: var(--cyan); background: rgba(0,180,204,.08);
+      padding: 1px 6px; border-radius: 3px;
+    }
+    .docs-section ul, .docs-section ol {
+      margin: 0 0 14px 20px; color: var(--text-muted); font-size: 14.5px; line-height: 1.85;
+    }
+    .docs-section li { margin-bottom: 4px; }
+    .docs-section li strong { color: var(--text); }
+    .docs-section li code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      color: var(--cyan); background: rgba(0,180,204,.08);
+      padding: 1px 6px; border-radius: 3px;
+    }
+
+    /* ── CODE BLOCK ── */
+    pre {
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+      margin: 16px 0; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; line-height: 1.7;
+      color: #c9d1d9;
+    }
+    pre.ascii {
+      color: var(--text-muted); font-size: 12px; line-height: 1.6;
+      background: var(--bg-2);
+    }
+    .code-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    /* ── TABLE ── */
+    .docs-table-wrap { overflow-x: auto; margin: 16px 0; }
+    table {
+      width: 100%; border-collapse: collapse;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; font-size: 13.5px;
+    }
+    th {
+      background: var(--surface); padding: 10px 16px;
+      text-align: left; font-size: 11px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      color: var(--text-muted); vertical-align: top;
+      font-size: 13.5px;
+    }
+    td strong { color: var(--text); }
+    td code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      color: var(--cyan); background: rgba(0,180,204,.08);
+      padding: 1px 5px; border-radius: 3px;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* ── HIGHLIGHT BOXES ── */
+    .callout {
+      padding: 16px 18px; border-radius: var(--radius); margin: 20px 0;
+      font-size: 14px; line-height: 1.75;
+    }
+    .callout-info {
+      background: rgba(0,180,204,.06); border-left: 3px solid var(--cyan);
+      color: var(--text-muted);
+    }
+    .callout-warn {
+      background: rgba(232,162,23,.06); border-left: 3px solid var(--amber);
+      color: #b8922a;
+    }
+    .callout-key {
+      background: rgba(82,194,122,.06); border-left: 3px solid var(--green);
+      color: #4a9e66;
+    }
+    .callout strong { color: var(--text); }
+
+    /* ── METRIC CARDS ── */
+    .metric-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      margin: 20px 0;
+    }
+    .metric-card {
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; text-align: center;
+    }
+    .metric-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .metric-value { font-size: 26px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .metric-unit  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px; text-align: center;
+      background: var(--bg-2);
+    }
+    footer p { font-size: 12px; color: var(--text-dim); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 960px) {
+      .toc { display: none; }
+      .docs-main { padding: 40px 28px 80px; }
+    }
+    @media (max-width: 600px) {
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+      nav { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-back" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    SonoCube
+  </a>
+  <span class="nav-sep">/</span>
+  <span class="nav-title">기술 문서</span>
+  <span class="nav-badge">Research Only</span>
+</nav>
+
+<div class="docs-layout">
+
+  <!-- ── TOC ── -->
+  <aside class="toc">
+    <div class="toc-title">목차</div>
+    <ul class="toc-list">
+      <li><a href="#s1">1. 문제 정의</a></li>
+      <li><a href="#s2">2. 전체 파이프라인</a></li>
+      <li><a href="#s3">3. LightUNet (LV Seg)</a>
+        <ul class="toc-sub">
+          <li><a href="#s3-arch">아키텍처</a></li>
+          <li><a href="#s3-train">학습 설정</a></li>
+          <li><a href="#s3-result">결과</a></li>
+        </ul>
+      </li>
+      <li><a href="#s4">4. SonoCubeV2 (EF Reg)</a>
+        <ul class="toc-sub">
+          <li><a href="#s4-input">입력 설계</a></li>
+          <li><a href="#s4-arch">아키텍처</a></li>
+          <li><a href="#s4-loss">손실 함수</a></li>
+          <li><a href="#s4-result">결과</a></li>
+        </ul>
+      </li>
+      <li><a href="#s5">5. 비교 기준선</a></li>
+      <li><a href="#s6">6. 실험 이력</a></li>
+      <li><a href="#s7">7. Simpson EF</a></li>
+      <li><a href="#s8">8. 앱 구조</a></li>
+      <li><a href="#s9">9. PDF 리포트</a></li>
+      <li><a href="#s10">10. 패키징</a></li>
+      <li><a href="#s11">11. 기술 스택</a></li>
+      <li><a href="#s12">12. 성능 요약</a></li>
+    </ul>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="docs-main">
+
+    <div class="docs-header">
+      <h1><span>Sono</span>Cube — 기술 문서</h1>
+      <p class="tagline">심장초음파 영상에서 박출계수(EF)를 자동 추정하는 연구용 데스크탑 애플리케이션.<br />모델 설계·학습·추론 파이프라인을 포함한 전체 기술 스택을 설명한다.</p>
+      <span class="research-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        Research only. Not for diagnostic use.
+      </span>
+    </div>
+
+    <!-- ── 1. 문제 정의 ── -->
+    <section class="docs-section" id="s1">
+      <h2><span class="section-num">01</span>문제 정의</h2>
+
+      <p><strong>박출계수(EF, Ejection Fraction)</strong>는 심장이 한 번 수축할 때 내보내는 혈액의 비율로, 좌심실 기능을 평가하는 핵심 지표다. 임상에서는 심장초음파(Echocardiography) 영상에서 심초음파사가 수동으로 LV 경계를 추적하여 Simpson's Biplane 법으로 계산한다. 이 과정은 시간이 많이 걸리고 측정자 간 변동성이 크다.</p>
+
+      <p><strong>연구 목표</strong>: 초음파 영상(AVI/MP4/DICOM)을 입력으로 받아 EF를 자동 추정하는 경량 파이프라인을 설계·검증한다.</p>
+
+      <div class="callout callout-key">
+        <strong>핵심 연구 가설</strong><br />
+        심장 주기 전체 시계열이 아닌, 수축기 말(ES)과 이완기 말(ED) 두 프레임만 보아도 ~15K 파라미터 경량 모델이 EF를 합리적으로 회귀할 수 있는가?
+      </div>
+
+      <p><strong>데이터</strong>: EchoNet-Dynamic (Stanford) — A4C(4-chamber) 초음파 영상 약 10,000건, EF 레이블 + ED/ES 프레임 인덱스 포함.</p>
+    </section>
+
+    <!-- ── 2. 전체 파이프라인 ── -->
+    <section class="docs-section" id="s2">
+      <h2><span class="section-num">02</span>전체 파이프라인</h2>
+
+<pre class="ascii">입력 영상 (MP4 / AVI / MOV / DICOM)
+        │
+        ▼
+  프레임 추출 (OpenCV)
+  grayscale / RGB, FPS 기록
+        │
+        ▼
+  LVSegEngine  ──────────────────────────────────────
+  LightUNet (lvseg_fp32.onnx, 1.8 MB)               │
+  • 각 프레임 → 96×96 grayscale → sigmoid 마스크     │
+  • LV 면적 곡선 계산                                │
+  • 이동평균 스무딩 → 극소/최대 검출                 │
+  • 실패 시 → 중심 밝기 heuristic fallback           │
+        │                                            │
+        ├── ED 프레임 인덱스                          │
+        └── ES 프레임 인덱스                          │
+                │                                   │
+                ▼                                   │
+  SonoCubeV2Engine                                  │
+  (sonocube_v2_fp32.onnx, 60 KB)                    │
+  • ED/ES 프레임 각 96×96 RGB (3ch × 2 = 6ch)       │
+  • 단일 forward pass → EF (%) 출력                 │
+                │                                   │
+                ▼                                   │
+  결과 조합 ←─────────────────────────────────────────
+  • ef, ed_idx, es_idx
+  • lv_masks (ED·ES 원본 해상도 업샘플)
+  • simpson_ef, edv_rel, esv_rel (면적 기반 참조값)
+  • confidence_level, quality_metrics
+        │
+        ▼
+  UI 렌더링 + PDF 리포트 생성</pre>
+    </section>
+
+    <!-- ── 3. LightUNet ── -->
+    <section class="docs-section" id="s3">
+      <h2><span class="section-num">03</span>모델 1 — LightUNet (LV Segmentation)</h2>
+
+      <p>프레임별 LV(좌심실) 영역을 픽셀 단위로 분할(Segmentation)하여 이진 마스크를 생성한다. 이 마스크의 시계열 면적 변화로 ED/ES 프레임을 검출하고, EF overlay와 Simpson 참조 계산에도 활용된다.</p>
+
+      <h3 id="s3-arch">아키텍처</h3>
+      <p>인코더-디코더 U-Net 구조. Skip connection으로 공간 정보를 보존한다. <code>base_ch=16</code>으로 채널 수를 최소화하여 일반적인 U-Net(base=64)의 약 1/16 크기지만, 심초음파의 단순한 타원형 LV 구조에 충분하다.</p>
+
+<pre>입력: (B, 1, 96, 96) grayscale float32
+
+Encoder
+  enc1: Conv3×3-BN-ReLU → Conv3×3-BN-ReLU   [B, 16, 96, 96]
+  MaxPool2d(2)                               [B, 16, 48, 48]
+  enc2: Conv3×3-BN-ReLU → Conv3×3-BN-ReLU   [B, 32, 48, 48]
+  MaxPool2d(2)                               [B, 32, 24, 24]
+  enc3: Conv3×3-BN-ReLU → Conv3×3-BN-ReLU   [B, 64, 24, 24]
+  MaxPool2d(2)                               [B, 64, 12, 12]
+
+Bottleneck
+  ConvBnRelu(64→128)                         [B, 128, 12, 12]
+
+Decoder
+  up3: ConvTranspose2d(128→64, stride=2)     [B,  64, 24, 24]
+  Cat([up3, enc3]) → dec3: ConvBnRelu(128→64) [B, 64, 24, 24]
+  up2: ConvTranspose2d(64→32, stride=2)      [B,  32, 48, 48]
+  Cat([up2, enc2]) → dec2: ConvBnRelu(64→32)  [B, 32, 48, 48]
+  up1: ConvTranspose2d(32→16, stride=2)      [B,  16, 96, 96]
+  Cat([up1, enc1]) → dec1: ConvBnRelu(32→16)  [B, 16, 96, 96]
+
+Head
+  Conv1×1(16→1) → Sigmoid                   [B, 1, 96, 96]
+
+파라미터: ~300K  |  ONNX: 1.8 MB</pre>
+
+      <h3>학습 데이터 구성</h3>
+      <p>EchoNet-Dynamic의 <code>VolumeTracings.csv</code>에는 ED·ES 프레임에 대한 LV 경계 추적 좌표(선분 형태)가 기록되어 있다. 선분 끝점 → Convex Hull → 채워진 이진 마스크로 변환한다.</p>
+
+<pre><code>def _points_to_mask(pts, hw=112):
+    arr = np.clip(np.array(pts), 0, hw-1).astype(np.int32)
+    hull = cv2.convexHull(arr.reshape(-1, 1, 2))
+    cv2.fillConvexPoly(mask, hull, 1)</code></pre>
+
+      <p>원본 해상도 112×112 마스크를 96×96으로 리사이즈하여 학습. ED·ES 프레임만 레이블이 있으므로 데이터셋은 <strong>프레임 단위</strong>(케이스당 2개)로 구성된다.</p>
+
+      <h3>손실 함수</h3>
+
+<pre><code>L_seg = 0.5 × BCE + 0.5 × Dice
+
+Dice Loss = 1 - (2·|P∩T| + ε) / (|P| + |T| + ε)</code></pre>
+
+      <p>BCE가 픽셀별 정확도를, Dice가 영역 겹침을 최적화한다.</p>
+
+      <h3>데이터 증강</h3>
+      <ul>
+        <li>수평 플립 (p=0.5) — 기기 방향에 따른 좌우 반전 처리</li>
+        <li>밝기 지터 ±15% (이미지만, 마스크 제외)</li>
+        <li>소회전 ±10°</li>
+      </ul>
+
+      <h3 id="s3-train">학습 설정</h3>
+      <div class="docs-table-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>값</th></tr></thead>
+        <tbody>
+          <tr><td>에포크</td><td>40</td></tr>
+          <tr><td>배치 크기</td><td>32</td></tr>
+          <tr><td>옵티마이저</td><td>AdamW (lr=1e-3, wd=1e-4)</td></tr>
+          <tr><td>LR 스케줄러</td><td>CosineAnnealingLR (η_min=1e-6)</td></tr>
+          <tr><td>Gradient Clip</td><td>2.0</td></tr>
+          <tr><td>플랫폼</td><td>Kaggle GPU (T4)</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3 id="s3-result">결과</h3>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">Test Dice</div>
+          <div class="metric-value" style="color:var(--green)">0.930</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Test IoU</div>
+          <div class="metric-value" style="color:var(--green)">0.871</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ONNX Size</div>
+          <div class="metric-value" style="color:var(--cyan)">1.8</div>
+          <div class="metric-unit">MB</div>
+        </div>
+      </div>
+
+      <h3>ED/ES 검출 알고리즘</h3>
+
+<pre><code># 1. 전체 프레임 LV 면적 곡선
+areas = [float((mask > 0.5).sum()) for mask in masks]
+
+# 2. 이동평균 스무딩 (커널 ≈ 영상 길이의 10%)
+k = max(3, n // 10)
+smoothed = np.convolve(areas, np.ones(k)/k, mode='full')[pad:pad+n]
+
+# 3. ED = 앞 50% 구간의 최대
+ed_idx = argmax(smoothed[:n//2])
+
+# 4. ES = ED 이후 한 심장 주기 내의 최소
+es_idx = ed_idx + argmin(smoothed[ed_idx+3 : ed_idx+cycle_len])</code></pre>
+
+      <p>심장 주기 제약(<code>cycle_len ≈ n/4</code>)으로 노이즈성 극소값을 방지한다. LVSegEngine 로드 실패 시 중심 밝기 heuristic으로 자동 fallback.</p>
+    </section>
+
+    <!-- ── 4. SonoCubeV2 ── -->
+    <section class="docs-section" id="s4">
+      <h2><span class="section-num">04</span>모델 2 — SonoCubeV2 (EF Regression)</h2>
+
+      <div class="callout callout-info">
+        <strong>연구 가설</strong> — 시계열 전체(≈30–100프레임)가 아닌, ED·ES 두 프레임만 CNN에 입력해도 ~15K 파라미터 경량 모델이 EF를 회귀할 수 있다.
+      </div>
+
+      <h3 id="s4-input">입력 설계</h3>
+      <p>ED·ES 두 프레임을 <strong>채널 방향으로 concat</strong>하여 6채널 텐서를 만든다. 모델이 ED·ES의 공간적 차이(LV 크기 변화)를 직접 관찰하도록 설계되어, EF = (EDV - ESV) / EDV를 "눈으로 비교"하는 것과 동일한 원리다.</p>
+
+<pre><code>ED frame (96×96 RGB) → (3, 96, 96)
+ES frame (96×96 RGB) → (3, 96, 96)
+            ↓
+     concat → (6, 96, 96)  ← 모델 입력</code></pre>
+
+      <h3 id="s4-arch">아키텍처</h3>
+      <p>채널 수는 <code>width_mult=0.75</code>로 스케일(12/24/48ch). BatchNorm을 모든 Conv 레이어에 추가해 학습 안정성을 확보한다.</p>
+
+<pre>입력: (B, 6, 96, 96)
+
+Feature Extractor (3-stage stride-2 CNN)
+  Conv3×3(6→12, s=2)-BN-ReLU    → [B, 12, 48, 48]
+  Conv3×3(12→24, s=2)-BN-ReLU   → [B, 24, 24, 24]
+  Conv3×3(24→48, s=2)-BN-ReLU   → [B, 48, 12, 12]
+  AdaptiveAvgPool2d((1,1))       → [B, 48,  1,  1]
+
+Regressor
+  Flatten                        → [B, 48]
+  Linear(48→24) - ReLU
+  Dropout(0.2)
+  Linear(24→1)                   → [B, 1]  (EF %)
+
+파라미터: ~15,400  |  ONNX: 60 KB</pre>
+
+      <h3 id="s4-loss">손실 함수 — L1 Loss</h3>
+      <div class="callout callout-warn">
+        <strong>MSE 대신 L1을 선택한 이유</strong> — EchoNet의 EF 분포는 40–70% 구간에 밀집되어 있고 저 EF(&lt;40%)는 소수다. MSE는 이상값에 민감하게 반응해 모델이 분포 평균(~55%)으로 수렴하는 <strong>mean collapse</strong>를 유발한다. L1은 이상값의 영향을 선형적으로 받아 다양한 EF 값에 더 균형 있게 학습된다.
+      </div>
+
+      <h3>클래스 불균형 보정 — WeightedRandomSampler</h3>
+      <p>EchoNet TRAIN 셋에서 EF&lt;40% 케이스는 전체의 약 8%. 4× 오버샘플링으로 보정한다. (8× 이상은 다시 mean collapse 위험.)</p>
+
+<pre><code>weights = [4.0 if ef < 40 else 1.0 for ef in ef_values]
+sampler = WeightedRandomSampler(weights, num_samples=len(weights), replacement=True)</code></pre>
+
+      <h3>학습 설정</h3>
+      <div class="docs-table-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>값</th></tr></thead>
+        <tbody>
+          <tr><td>에포크</td><td>80</td></tr>
+          <tr><td>배치 크기</td><td>32</td></tr>
+          <tr><td>옵티마이저</td><td>AdamW (lr=3e-4, wd=1e-4)</td></tr>
+          <tr><td>LR 스케줄러</td><td>CosineAnnealingLR</td></tr>
+          <tr><td>Gradient Clip</td><td>2.0</td></tr>
+          <tr><td>플랫폼</td><td>Kaggle GPU (T4 / P100)</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3 id="s4-result">결과 (EchoNet TEST)</h3>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">MAE</div>
+          <div class="metric-value" style="color:var(--cyan)">8.76</div>
+          <div class="metric-unit">%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Pearson r</div>
+          <div class="metric-value" style="color:var(--cyan)">0.534</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Model Size</div>
+          <div class="metric-value" style="color:var(--green)">60</div>
+          <div class="metric-unit">KB (ONNX fp32)</div>
+        </div>
+      </div>
+
+      <p>임상적으로 EF ±5%가 측정자 간 변동성 기준인 점을 감안하면 PoC 단계에서 합리적인 성능이다.</p>
+
+      <h3>추론 코드</h3>
+
+<pre><code># 1. LVSegEngine으로 ED/ES 검출
+ed_idx, es_idx = lvseg.find_ed_es(frames)
+
+# 2. 두 프레임을 6ch 텐서로 조합
+ed_t = frames[ed_idx]  # (3, 96, 96)
+es_t = frames[es_idx]  # (3, 96, 96)
+pair = np.concatenate([ed_t, es_t], axis=0)[np.newaxis]  # (1, 6, 96, 96)
+
+# 3. ONNX 추론
+ef = float(session.run(None, {"ed_es_pair": pair})[0][0, 0])</code></pre>
+    </section>
+
+    <!-- ── 5. 비교 기준선 ── -->
+    <section class="docs-section" id="s5">
+      <h2><span class="section-num">05</span>비교 기준선 — R2Plus1D Linear Probe</h2>
+
+      <p>Kinetics-400으로 사전학습된 R2Plus1D 비디오 백본 위에 EchoNet으로 선형 헤드만 fine-tuning한 모델.</p>
+
+<pre>영상 클립 (32프레임, 112×112)
+  → R2Plus1D backbone (Kinetics pretrained, 31.5M params)
+  → global average pooling
+  → Linear(512 → 1)  ← EchoNet으로 학습한 부분
+  → EF (%)</pre>
+
+      <div class="docs-table-wrap">
+      <table>
+        <thead><tr><th>지표</th><th>값</th></tr></thead>
+        <tbody>
+          <tr><td>MAE</td><td>~12.2%</td></tr>
+          <tr><td>Pearson r</td><td>~0.36</td></tr>
+          <tr><td>모델 크기</td><td>~119 MB</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="callout callout-key">
+        <strong>핵심 시사점</strong> — 백본 동결 + 선형 헤드만 학습이므로 도메인 적응이 충분하지 않다. SonoCubeV2 대비 모델이 2,000× 크고 성능은 낮다. <strong>"경량 특화 모델이 거대 범용 모델을 이길 수 있다"</strong>는 가설의 실험적 근거.
+      </div>
+    </section>
+
+    <!-- ── 6. 실험 이력 ── -->
+    <section class="docs-section" id="s6">
+      <h2><span class="section-num">06</span>모델 실험 이력</h2>
+
+      <h3>SonoCube V1 (단일 프레임)</h3>
+      <ul>
+        <li><strong>입력</strong>: 단일 프레임 (3, 96, 96)</li>
+        <li><strong>문제</strong>: ED/ES 맥락 없이 EF를 직접 회귀하기 어려움</li>
+        <li><strong>성능</strong>: VAL MAE ~9.4%</li>
+      </ul>
+
+      <h3>SonoCube V2 (현재 운영)</h3>
+      <ul>
+        <li><strong>입력</strong>: ED+ES 프레임 쌍 (6, 96, 96)</li>
+        <li><strong>결과</strong>: TEST MAE 8.76%, r=0.534</li>
+      </ul>
+
+      <h3>SonoCube V2b — 실패한 실험 2건</h3>
+      <p>V2를 베이스로 저 EF 예측력 강화를 시도했으나 <strong>mean collapse</strong>로 두 번 실패했다.</p>
+
+      <p class="code-label">1차 실패 원인</p>
+<pre><code># 문제 1: 학습 가능한 bias offset 파라미터
+self.bias_offset = nn.Parameter(torch.zeros(1))
+# → 모든 입력에 동일한 상수를 더하게 되어 ~32% 상수 예측으로 수렴
+
+# 문제 2: 저 EF에 2× 패널티를 주는 weighted L1
+def weighted_l1(pred, target):
+    mask = (target < 40).float()
+    return ((pred - target).abs() * (1 + mask)).mean()
+# → loss landscape 왜곡
+
+# 문제 3: low_ef_weight=8.0 (오버샘플링 과다)</code></pre>
+
+      <p>2차 수정(bias_offset 제거, plain L1, low_ef_weight=3.0) 후에도 <code>WeightedRandomSampler</code> 자체가 loss landscape를 왜곡하여 ~1.8% 상수 예측으로 수렴. V2b 접근을 전면 폐기하고 V2를 최종 모델로 확정했다.</p>
+    </section>
+
+    <!-- ── 7. Simpson EF ── -->
+    <section class="docs-section" id="s7">
+      <h2><span class="section-num">07</span>Simpson EF 참조 계산</h2>
+
+      <p>임상의 Simpson's Biplane 법을 단순화한 1-plane 픽셀 면적 근사. AI 예측값과 독립적인 <strong>두 번째 참조값</strong>을 제공한다.</p>
+
+<pre><code>def compute_simpson_metrics(ed_mask, es_mask):
+    a_ed = float((ed_mask > 0.5).sum())   # ED LV 면적 (픽셀 수)
+    a_es = float((es_mask > 0.5).sum())   # ES LV 면적
+
+    # Simpson 단면법 근사: V ∝ A^1.5  (원형 단면 가정)
+    edv_raw = a_ed ** 1.5
+    esv_raw = a_es ** 1.5
+    ef = (edv_raw - esv_raw) / edv_raw * 100.0
+
+    return {
+        "ef":      float(np.clip(ef, 0.0, 100.0)),
+        "edv_rel": round(edv_raw * 1e-4, 1),  # 단위 없는 상대값
+        "esv_rel": round(esv_raw * 1e-4, 1),
+    }</code></pre>
+
+      <div class="callout callout-warn">
+        <strong>한계</strong> — 픽셀 크기 캘리브레이션(mm/pixel) 없이는 mL 단위 환산 불가. 화면에 "Pixel-area based · No calibration"으로 표시하여 오용을 방지한다.
+      </div>
+    </section>
+
+    <!-- ── 8. 앱 구조 ── -->
+    <section class="docs-section" id="s8">
+      <h2><span class="section-num">08</span>애플리케이션 구조</h2>
+
+      <h3>GUI 레이아웃</h3>
+      <p>PyQt5 기반 3-컬럼 Medical Workstation 스타일.</p>
+
+<pre class="ascii">┌──────────────────────────────────────────────────────────┐
+│ 좌 (230px)      │ 중 (flex)            │ 우 (280px)      │
+│─────────────────│──────────────────────│─────────────────│
+│ Study           │ FrameLabel           │ Estimated EF    │
+│ • Drop/Browse   │ (영상 뷰어)          │ [52px 숫자]     │
+│                 │                      │ EF Range Bar    │
+│ Case            │ ──────────────────── │─────────────────│
+│ • Case ID       │ 슬라이더 + 밝기/대비  │ Volume Metrics  │
+│ • View type     │ LV Mask 토글         │ • Ref EF (Simp) │
+│                 │                      │ • EDV / ESV rel │
+│ [Analyze]       │ ED/ES 점프/Override  │─────────────────│
+│                 │                      │ Prediction Stab │
+│ Export          │ ──────────────────── │ ED/ES Frames    │
+│ • Preview       │ EFCurveWidget        │ Quality Warn    │
+│ • Open PDF      │ (matplotlib embed)   │ Model Info      │
+│ • Open JSON     │                      │                 │
+│ • Regen PDF     │                      │                 │
+└──────────────────────────────────────────────────────────┘</pre>
+
+      <h3>EF Range Bar</h3>
+      <p>QPainter로 직접 그리는 커스텀 위젯. 임상 기준 구역 3색과 현재 EF 마커, min-max 범위 하이라이트를 렌더링한다.</p>
+
+<pre><code># 구역 배경 (0-40: red, 40-55: amber, 55+: green)
+p.setBrush(QColor(EF_LOW));    p.drawRect(0, BAR_Y, xp(40), BAR_H)
+p.setBrush(QColor(EF_MID));    p.drawRect(xp(40), BAR_Y, xp(55)-xp(40), BAR_H)
+p.setBrush(QColor(EF_NORMAL)); p.drawRect(xp(55), BAR_Y, w-xp(55), BAR_H)
+
+# EF 마커 (삼각형)
+tri = QPolygon([QPoint(mx-5, BAR_Y-1), QPoint(mx+5, BAR_Y-1), QPoint(mx, BAR_Y+BAR_H+3)])
+p.drawPolygon(tri)</code></pre>
+
+      <h3>LV Mask Overlay</h3>
+      <p>ED·ES 프레임에서만 활성화. 시안 반투명 채우기 + 경계선으로 세그멘테이션 영역을 시각화한다.</p>
+
+<pre><code>overlay[binary == 1] = (
+    overlay[binary == 1] * 0.55 +
+    np.array([0, 229, 204]) * 0.45   # 시안 #00e5cc
+).astype(np.uint8)
+contours, _ = cv2.findContours(binary, ...)
+cv2.drawContours(overlay, contours, -1, (0, 229, 204), 1)</code></pre>
+
+      <h3>Manual ED/ES Override</h3>
+      <p>자동 검출 결과가 부정확할 경우, 사용자가 슬라이더로 원하는 프레임에서 Set ED / Set ES 버튼을 눌러 수동 지정 가능. 수동 지정 여부는 리포트에도 기록된다.</p>
+
+<pre class="ascii">단축키
+  ←  →       프레임 이동
+  E          ED 프레임으로 이동
+  S          ES 프레임으로 이동
+  Ctrl+E     현재 프레임을 ED로 설정
+  Ctrl+D     현재 프레임을 ES로 설정
+  Space      분석 시작</pre>
+
+      <h3>백그라운드 워커</h3>
+      <p>분석은 QThread(Worker)에서 실행되어 UI가 blocking되지 않는다. 진행 상황은 <code>progress_updated</code> 시그널로 메인 스레드에 전달된다.</p>
+
+<pre class="ascii">Worker 단계별 메시지:
+  "Loading video..."  →  "Running LV segmentation..."
+  →  "Detecting ED/ES frames..."  →  "Running EF prediction..."
+  →  "Generating report..."  →  완료</pre>
+    </section>
+
+    <!-- ── 9. PDF 리포트 ── -->
+    <section class="docs-section" id="s9">
+      <h2><span class="section-num">09</span>PDF 리포트 파이프라인</h2>
+
+      <p>ReportLab으로 A4 구조화 보고서를 생성한다. 모든 이미지(EF 바, EF 곡선, ED/ES 스냅샷)는 matplotlib Agg 백엔드로 임시 PNG를 생성 후 삽입하여 PyInstaller 패키징 환경에서 thread-safe하게 동작한다.</p>
+
+      <h3>리포트 구성</h3>
+      <ol>
+        <li>케이스 정보 테이블 (Case ID, 날짜, 파일명, View type)</li>
+        <li>EF 결과 — EF 범위 바 이미지 + 상세 수치 테이블 (AI EF / Mean / Std / Min-Max / Simpson EF / EDV·ESV / 추론 지연시간)</li>
+        <li>Image Quality 경고 (블러, 밝기, 클립 길이)</li>
+        <li>Frame-wise EF Curve (V1 모델 사용 시)</li>
+        <li>ED/ES 스냅샷 (LV 마스크 시안 overlay 포함)</li>
+        <li>미지원 지표 목록</li>
+        <li>Model &amp; Metadata 테이블</li>
+      </ol>
+    </section>
+
+    <!-- ── 10. 패키징 ── -->
+    <section class="docs-section" id="s10">
+      <h2><span class="section-num">10</span>패키징 및 배포</h2>
+
+      <h3>PyInstaller — onedir 모드</h3>
+      <p>macOS <code>.app</code> 번들은 onefile 모드를 지원하지 않으므로 onedir 모드를 사용한다.</p>
+
+<pre class="ascii">dist/SonoCube.app/
+└── Contents/
+    └── MacOS/
+        └── SonoCube/           ← _MEIPASS
+            ├── SonoCube        (EXE)
+            ├── model/
+            │   ├── lvseg/      (lvseg_fp32.onnx)
+            │   └── v2/         (sonocube_v2_fp32.onnx)
+            └── ...</pre>
+
+<pre><code>def resource_path(rel: str) -> Path:
+    if hasattr(sys, '_MEIPASS'):   # PyInstaller 패키징 환경
+        return Path(sys._MEIPASS) / rel
+    return PROJECT_ROOT / rel      # 개발 환경</code></pre>
+
+      <h3>DMG 빌드</h3>
+
+<pre><code>pyinstaller packaging/sonocube_mac.spec   # .app 생성
+bash packaging/build_dmg.sh               # DMG 패키지 생성
+
+# hdiutil 파이프라인:
+# UDRW 임시 DMG → Applications 심볼릭 링크 → UDZO (zlib-9) 압축
+# 결과: dist/SonoCube-1.3.0.dmg (~178 MB)</code></pre>
+
+      <h3>Gatekeeper 우회</h3>
+      <p>서명되지 않은 앱이므로 첫 실행 시 보안 경고가 발생한다.</p>
+
+<pre><code>sudo xattr -rd com.apple.quarantine /Applications/SonoCube.app</code></pre>
+    </section>
+
+    <!-- ── 11. 기술 스택 ── -->
+    <section class="docs-section" id="s11">
+      <h2><span class="section-num">11</span>기술 스택</h2>
+
+      <div class="docs-table-wrap">
+      <table>
+        <thead><tr><th>레이어</th><th>기술</th></tr></thead>
+        <tbody>
+          <tr><td><strong>모델 학습</strong></td><td>PyTorch 2.x, Kaggle GPU (T4/P100)</td></tr>
+          <tr><td><strong>모델 추론</strong></td><td>ONNX Runtime (CPUExecutionProvider)</td></tr>
+          <tr><td><strong>영상 처리</strong></td><td>OpenCV (cv2)</td></tr>
+          <tr><td><strong>수치 계산</strong></td><td>NumPy, SciPy</td></tr>
+          <tr><td><strong>GUI</strong></td><td>PyQt5 (Qt 5.15)</td></tr>
+          <tr><td><strong>시각화</strong></td><td>matplotlib (Agg + Qt5Agg backend)</td></tr>
+          <tr><td><strong>PDF 생성</strong></td><td>ReportLab</td></tr>
+          <tr><td><strong>DICOM 지원</strong></td><td>pydicom</td></tr>
+          <tr><td><strong>패키징</strong></td><td>PyInstaller 6.x (onedir + BUNDLE)</td></tr>
+          <tr><td><strong>플랫폼</strong></td><td>macOS (Apple Silicon / Intel), Windows</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- ── 12. 성능 요약 ── -->
+    <section class="docs-section" id="s12">
+      <h2><span class="section-num">12</span>성능 요약</h2>
+
+      <div class="docs-table-wrap">
+      <table>
+        <thead><tr><th>모델</th><th>MAE</th><th>r</th><th>파라미터</th><th>크기</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>SonoCubeV2</strong> (ED/ES 쌍)</td>
+            <td><strong style="color:var(--green)">8.76%</strong></td>
+            <td><strong style="color:var(--green)">0.534</strong></td>
+            <td>~15K</td>
+            <td><strong>60 KB</strong></td>
+          </tr>
+          <tr>
+            <td>SonoCube V1 (단일 프레임)</td>
+            <td>~9.4%</td>
+            <td>—</td>
+            <td>~14K</td>
+            <td>~55 KB</td>
+          </tr>
+          <tr>
+            <td>R2Plus1D Linear Probe</td>
+            <td>~12.2%</td>
+            <td>~0.36</td>
+            <td>31.5M</td>
+            <td>119 MB</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="docs-table-wrap" style="margin-top:16px">
+      <table>
+        <thead><tr><th>컴포넌트</th><th>지표</th><th>값</th></tr></thead>
+        <tbody>
+          <tr><td>LightUNet</td><td>Test Dice</td><td><strong style="color:var(--green)">0.930</strong></td></tr>
+          <tr><td>LightUNet</td><td>Test IoU</td><td><strong style="color:var(--green)">0.871</strong></td></tr>
+          <tr><td>Simpson EF</td><td>추가 참조값</td><td>픽셀 면적 기반, 캘리브레이션 無</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="callout callout-key" style="margin-top:24px">
+        <strong>핵심 발견</strong> — 60KB짜리 15K 파라미터 모델이, 시계열 전체를 보는 31.5M 파라미터 모델보다 EchoNet TEST에서 더 낮은 MAE를 달성했다. 심초음파 EF 추정에서 <strong>ED-ES 두 프레임</strong>이 핵심 정보를 담고 있으며, 도메인 특화 경량 설계가 범용 대형 모델을 이길 수 있음을 실험적으로 확인했다.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <p>SonoCube v1.3.0 · Research use only. Not for clinical diagnosis. · © 2026 SonoCube Research Team</p>
+</footer>
+
+<script>
+  // TOC scroll spy
+  const sections = document.querySelectorAll('.docs-section');
+  const links = document.querySelectorAll('.toc-list a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const id = entry.target.id;
+        const active = document.querySelector(`.toc-list a[href="#${id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
