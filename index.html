@@ -345,7 +345,7 @@
       vertical-align: top;
     }
     .roadmap-table tr:last-child td { border-bottom: none; }
-    .roadmap-table tr:nth-child(2) td { background: var(--bg-2); }
+    .roadmap-table tr:nth-child(3) td { background: var(--bg-2); }
     .version-badge {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
@@ -491,7 +491,7 @@
     <div>
       <div class="hero-badge">
         <div class="dot"></div>
-        macOS v1.3.0 · Research Software
+        macOS v1.4.0 · Research Software
       </div>
 
       <h1 class="hero-title">
@@ -509,7 +509,7 @@
       <div class="hero-actions">
         <a class="btn-primary" href="#download">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          macOS용 다운로드 (v1.3.0)
+          macOS용 다운로드 (v1.4.0)
         </a>
       </div>
 
@@ -631,7 +631,7 @@
     <div class="flow-step">
       <div class="flow-step-num">2</div>
       <div class="flow-step-title">ED/ES 자동 검출 + AI 추론</div>
-      <div class="flow-step-sub">ONNX 경량 모델 (MAE 8.76%)</div>
+      <div class="flow-step-sub">ONNX 경량 모델 (MAE 8.01%)</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-step">
@@ -675,7 +675,7 @@
     <div class="feature-card">
       <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
       <h3>인터넷 없이 로컬 실행</h3>
-      <p>외부 서버에 데이터를 전송하지 않습니다. 모든 추론은 로컬 CPU에서 실행되는 ONNX 경량 모델(~60KB)로 처리됩니다. ED/ES 쌍 입력 방식으로 EchoNet 테스트셋 기준 MAE 8.76%, r=0.534를 달성했습니다. 환자 영상 데이터가 기기 밖으로 나가지 않습니다.</p>
+      <p>외부 서버에 데이터를 전송하지 않습니다. 모든 추론은 로컬 CPU에서 실행되는 ONNX 경량 모델(~60KB)로 처리됩니다. ED/ES 쌍 입력 방식으로 EchoNet 테스트셋 기준 MAE 8.01%, r=0.614를 달성했습니다. 환자 영상 데이터가 기기 밖으로 나가지 않습니다.</p>
     </div>
 
     <div class="feature-card">
@@ -720,7 +720,7 @@
     <div class="bg-text">
       <p>SonoCube는 임상 연구 현장에서 반복적인 echo 분석 작업을 줄이기 위해 연구팀이 직접 설계하고 개발한 연구용 소프트웨어입니다.</p>
       <p>상용 echo 워크스테이션은 병원 PACS 시스템에 종속되어 있어 외부 연구 환경이나 멀티센터 연구에서 동일한 분석 파이프라인을 유지하기 어렵습니다. SonoCube는 표준 영상 파일(AVI/DICOM)만 있으면 어떤 환경에서도 동일한 AI 파이프라인으로 분석 결과를 재현할 수 있도록 설계되었습니다.</p>
-      <p>v1.3에서는 LV 분할 모델(LVSegEngine)이 통합되어 수동 프레임 선택 없이 ED/ES를 자동 검출합니다. 분할 마스크 기반의 Simpson EF 근사값도 참고용으로 함께 제공됩니다.</p>
+      <p>v1.4에서는 SonoCubeV2b 모델이 탑재되어 예측 정확도와 편향이 개선되었습니다. LV 분할 모델(LVSegEngine)이 수동 프레임 선택 없이 ED/ES를 자동 검출하며, 분할 마스크 기반의 Simpson EF 근사값도 참고용으로 함께 제공됩니다.</p>
     </div>
 
     <div class="tech-stack">
@@ -729,7 +729,7 @@
       <div class="tech-item"><span class="tech-key">GUI</span><span class="tech-val">PyQt5</span></div>
       <div class="tech-item"><span class="tech-key">AI Inference</span><span class="tech-val">ONNX Runtime</span></div>
       <div class="tech-item"><span class="tech-key">LVSegEngine</span><span class="tech-val">U-Net 1.8MB · Dice 0.930</span></div>
-      <div class="tech-item"><span class="tech-key">SonoCubeV2</span><span class="tech-val">CNN 60KB · MAE 8.76%</span></div>
+      <div class="tech-item"><span class="tech-key">SonoCubeV2b</span><span class="tech-val">CNN 60KB · MAE 8.01% · r=0.614</span></div>
       <div class="tech-item"><span class="tech-key">Acceleration</span><span class="tech-val">CoreML (Apple)</span></div>
       <div class="tech-item"><span class="tech-key">Video</span><span class="tech-val">OpenCV</span></div>
       <div class="tech-item"><span class="tech-key">Report</span><span class="tech-val">ReportLab</span></div>
@@ -756,8 +756,12 @@
         <td>EF 자동 추정, PDF 리포트, 케이스 히스토리</td>
       </tr>
       <tr>
-        <td><span class="version-badge badge-current"><span class="current-dot"></span>v1.3 (현재)</span></td>
-        <td>LVSeg 통합 (Dice=0.930) + SonoCubeV2 (60KB, MAE 8.76%) — LV 마스크 기반 ED/ES 자동 검출, Simpson EF 근사</td>
+        <td><span class="version-badge badge-planned">v1.3</span></td>
+        <td>LVSeg 통합 (Dice=0.930) + SonoCubeV2 — LV 마스크 기반 ED/ES 자동 검출, Simpson EF 근사</td>
+      </tr>
+      <tr>
+        <td><span class="version-badge badge-current"><span class="current-dot"></span>v1.4 (현재)</span></td>
+        <td>SonoCubeV2b 탑재 — MAE 8.01%, r=0.614, Bias 보정 (+0.49%)</td>
       </tr>
       <tr>
         <td><span class="version-badge badge-planned">v1.5 (예정)</span></td>
@@ -796,7 +800,7 @@
   <div class="download-buttons">
     <a class="btn-download" href="#" id="dmg-link">
       <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      macOS 다운로드 (v1.3.0)
+      macOS 다운로드 (v1.4.0)
     </a>
   </div>
 
@@ -816,7 +820,7 @@
 
 <!-- ── FOOTER ── -->
 <footer>
-  <div class="footer-logo"><span>Sono</span>Cube <span style="font-size:13px;color:var(--text-dim);font-weight:400;">v1.3.0</span></div>
+  <div class="footer-logo"><span>Sono</span>Cube <span style="font-size:13px;color:var(--text-dim);font-weight:400;">v1.4.0</span></div>
   <div class="footer-tagline">Research use only. Not for clinical diagnosis.</div>
   <div class="footer-links">
     <a href="#disclaimer">Disclaimer</a>
