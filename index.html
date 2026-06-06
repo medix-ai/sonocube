@@ -440,6 +440,24 @@
     }
     .sysreq-item .check { color: var(--green); flex-shrink: 0; }
 
+    /* ── DISCLAIMER EXPANDED ── */
+    .disc-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      margin-bottom: 22px;
+    }
+    .disc-item {
+      padding: 14px 16px; border-radius: 7px;
+      background: rgba(255,179,0,.04); border: 1px solid #3d2e00;
+    }
+    .disc-item h4 {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #ffb300; margin-bottom: 6px;
+    }
+    .disc-item p { font-size: 13px; line-height: 1.75; color: #c8a850; margin: 0; }
+    .disc-divider { border: none; border-top: 1px solid #3d2e00; margin: 18px 0; }
+    .disc-en { font-size: 12.5px; line-height: 1.75; color: #7a6030; }
+    @media (max-width: 640px) { .disc-grid { grid-template-columns: 1fr; } }
+
     /* ── FOOTER ── */
     footer {
       background: var(--bg-2); border-top: 1px solid var(--border);
@@ -787,17 +805,50 @@
 
 <!-- ── DISCLAIMER ── -->
 <section id="disclaimer" style="padding: 64px 48px; max-width: 100%; background:var(--bg)">
-  <div class="disclaimer-box" style="max-width:860px;margin:0 auto;background:#1a1200;border:1px solid #3d2e00;border-radius:12px;padding:36px 40px;">
-    <div class="disclaimer-header" style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+  <div style="max-width:860px;margin:0 auto;background:#1a1200;border:1px solid #3d2e00;border-radius:12px;padding:36px 40px;">
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffb300" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-      <h2 style="font-size:18px;font-weight:700;color:#ffb300;">연구 목적 전용 소프트웨어</h2>
+      <h2 style="font-size:18px;font-weight:700;color:#ffb300;">주의사항 및 법적 고지</h2>
     </div>
-    <div class="disclaimer-body">
-      <p style="font-size:14px;line-height:1.85;color:#c8a850;margin-bottom:12px;">이 소프트웨어는 학술 및 연구 목적으로만 개발되었습니다. 임상 진단, 치료 결정, 또는 의료 행위의 근거로 사용해서는 안 됩니다.</p>
-      <p style="font-size:14px;line-height:1.85;color:#c8a850;margin-bottom:12px;">표시되는 EF 수치는 AI 모델의 추론 결과이며, 공인된 의료기기로 측정된 수치와 동일하지 않습니다.</p>
-      <p style="font-size:14px;line-height:1.85;color:#c8a850;">Prediction stability(예측 안정성)는 프레임별 추론의 일관성을 나타내는 지표로, 임상적 신뢰도(clinical confidence)와 다른 개념입니다.</p>
-      <p style="font-size:13px;line-height:1.75;color:#8a7040;border-top:1px solid #3d2e00;padding-top:14px;margin-top:16px;">This software is intended for research use only. It is not a medical device and must not be used for clinical diagnosis.</p>
+
+    <div class="disc-grid">
+
+      <div class="disc-item">
+        <h4>연구 목적 전용</h4>
+        <p>이 소프트웨어는 학술 및 연구 목적으로만 개발되었습니다. 임상 진단, 치료 결정, 또는 의료 행위의 근거로 사용해서는 안 됩니다.</p>
+      </div>
+
+      <div class="disc-item">
+        <h4>의료기기 비해당</h4>
+        <p>본 소프트웨어는 의료기기가 아니며, 식품의약품안전처(MFDS) 또는 미국 FDA의 허가·인증을 받지 않았습니다. 의료기기로 간주하거나 그에 준하여 사용해서는 안 됩니다.</p>
+      </div>
+
+      <div class="disc-item">
+        <h4>AI 모델 성능 한계</h4>
+        <p>표시되는 EF 수치는 AI 모델의 추론 결과이며, 공인 의료기기의 측정값과 동일하지 않습니다. 모델 성능 지표(MAE 8.01%, r=0.614)는 EchoNet-Dynamic 테스트셋 기준이며, 다른 기관·기기·환자군에서의 성능은 별도로 검증되지 않았습니다.</p>
+      </div>
+
+      <div class="disc-item">
+        <h4>책임 한계</h4>
+        <p>본 소프트웨어의 사용 또는 사용 불능으로 인해 발생하는 어떠한 직·간접적 손해에 대해서도 개발팀은 법적 책임을 지지 않습니다. 사용자는 자신의 판단과 책임 하에 본 소프트웨어를 사용합니다.</p>
+      </div>
+
+      <div class="disc-item">
+        <h4>데이터 처리</h4>
+        <p>모든 영상 분석은 사용자의 기기 내에서만 처리됩니다. 입력 영상 및 분석 결과는 외부 서버로 전송되지 않습니다. 단, DICOM 파일에 포함된 환자 식별 정보는 사용자가 직접 관리해야 합니다.</p>
+      </div>
+
+      <div class="disc-item">
+        <h4>Prediction Stability</h4>
+        <p>Prediction stability(예측 안정성)는 프레임별 추론의 일관성을 나타내는 내부 지표로, 임상적 신뢰도(clinical confidence)와는 다른 개념입니다. 안정성 수치가 높더라도 임상적 정확성을 보장하지 않습니다.</p>
+      </div>
+
     </div>
+
+    <hr class="disc-divider" />
+    <p class="disc-en">This software is intended for research use only. It is not a medical device and has not been approved or cleared by the Ministry of Food and Drug Safety (MFDS) or the U.S. FDA. Performance metrics are based on the EchoNet-Dynamic dataset and may not generalize to other patient populations or imaging equipment. The development team assumes no legal liability for any damages arising from the use of this software.</p>
+
   </div>
 </section>
 
@@ -842,6 +893,10 @@
     <a href="#download">Download</a>
   </div>
   <div class="footer-copy">© 2026 SonoCube Research Team</div>
+  <div style="margin-top:16px;font-size:11px;color:var(--text-dim);line-height:1.7;max-width:560px;margin-left:auto;margin-right:auto;">
+    AI 모델 학습에 EchoNet-Dynamic 데이터셋(Stanford University)을 사용했습니다.<br />
+    Ouyang, D. et al. "Video-based AI for beat-to-beat assessment of cardiac function." <em>Nature</em> 580, 252–256 (2020).
+  </div>
 </footer>
 
 </body>
