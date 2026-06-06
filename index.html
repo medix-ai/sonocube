@@ -403,6 +403,16 @@
       border: 1px solid var(--border); text-decoration: none; transition: border-color .15s;
     }
     .btn-github:hover { border-color: var(--text-muted); }
+    .btn-coming-soon {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px; border-radius: 10px;
+      background: transparent; color: var(--text-dim); font-size: 15px; font-weight: 500;
+      border: 1px solid var(--border); cursor: not-allowed;
+      opacity: .5;
+    }
+    .download-meta {
+      font-size: 12px; color: var(--text-dim); margin-top: 12px; margin-bottom: 40px;
+    }
 
     .install-guide {
       max-width: 600px; margin: 0 auto 40px; text-align: left;
@@ -798,11 +808,16 @@
   <p class="download-sub">Apple Silicon (M1/M2/M3) 및 Intel Mac 지원 · Universal Binary</p>
 
   <div class="download-buttons">
-    <a class="btn-download" href="#" id="dmg-link">
+    <a class="btn-download" href="https://github.com/medix-ai/sonocube_poc/releases/download/v1.4.0/SonoCube_v1.4.0.dmg">
       <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       macOS 다운로드 (v1.4.0)
     </a>
+    <span class="btn-coming-soon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Windows — Coming Soon
+    </span>
   </div>
+  <p class="download-meta">macOS Universal Binary (Apple Silicon / Intel) · 약 721 MB</p>
 
   <div class="install-guide" style="max-width:600px;margin:0 auto 40px;text-align:left;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;">
     <h4 style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:12px;">macOS 설치 안내</h4>
