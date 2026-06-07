@@ -440,6 +440,93 @@
     }
     .sysreq-item .check { color: var(--green); flex-shrink: 0; }
 
+    /* ── FEATURE TABS ── */
+    .tab-nav {
+      display: flex; border-bottom: 1px solid var(--border);
+      margin-bottom: 28px; overflow-x: auto; gap: 0;
+    }
+    .tab-btn {
+      padding: 10px 20px; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); background: none; border: none;
+      border-bottom: 2px solid transparent; cursor: pointer;
+      white-space: nowrap; transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .feat-category {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-dim);
+      margin: 22px 0 10px;
+    }
+    .feat-category:first-child { margin-top: 0; }
+    .feat-list { list-style: none; display: grid; gap: 7px; }
+    .feat-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 13.5px; color: var(--text-muted); line-height: 1.65;
+    }
+    .feat-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--cyan); flex-shrink: 0; margin-top: 8px;
+    }
+    .not-impl-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .not-impl-table th { background: var(--surface); padding: 10px 16px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); text-align: left; border-bottom: 1px solid var(--border); }
+    .not-impl-table td { padding: 10px 16px; font-size: 13.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+    .not-impl-table tr:last-child td { border-bottom: none; }
+    .status-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+    .status-struct { background: rgba(232,162,23,.12); color: var(--amber); }
+    .status-approx { background: rgba(0,180,204,.10); color: var(--cyan); }
+    .status-none   { background: rgba(255,255,255,.05); color: var(--text-dim); }
+    .status-wip    { background: rgba(82,194,122,.10); color: var(--green); }
+
+    /* ── SCREENSHOT GALLERY ── */
+    .screenshot-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+    }
+    .screenshot-item {
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .screenshot-item img { width: 100%; display: block; }
+    .screenshot-placeholder {
+      aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px;
+      background: var(--bg-3); color: var(--text-dim); font-size: 12px;
+      border: 2px dashed var(--border);
+    }
+    .screenshot-placeholder svg { opacity: .3; }
+    .screenshot-caption {
+      padding: 10px 14px; font-size: 12px; color: var(--text-muted); background: var(--bg-2);
+    }
+
+    /* ── DEMO VIDEO ── */
+    .video-wrap {
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border); background: var(--bg-3);
+      position: relative;
+    }
+    .video-wrap video { width: 100%; display: block; max-height: 560px; }
+    .video-placeholder {
+      aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px; color: var(--text-dim);
+      font-size: 13px; background: var(--bg-3);
+    }
+    .video-placeholder svg { opacity: .25; }
+
+    /* ── SCREENSHOT HERO ── */
+    .hero-screenshot-wrap {
+      width: 100%; max-width: 520px;
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .hero-screenshot-wrap img { width: 100%; display: block; }
+
+    @media (max-width: 700px) {
+      .screenshot-grid { grid-template-columns: 1fr; }
+    }
+
     /* ── DISCLAIMER EXPANDED ── */
     .disc-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
@@ -506,6 +593,8 @@
     <a href="#problem">문제 정의</a>
     <a href="#solution">솔루션</a>
     <a href="#features">기능</a>
+    <a href="#screenshots">스크린샷</a>
+    <a href="#demo">데모</a>
     <a href="#roadmap">로드맵</a>
     <a href="docs.html">기술 문서</a>
     <a href="#download">다운로드</a>
@@ -547,74 +636,17 @@
       </div>
     </div>
 
-    <!-- App Mockup -->
+    <!-- App Screenshot -->
     <div class="hero-visual">
-      <div class="app-mockup">
+      <div class="hero-screenshot-wrap">
         <div class="mockup-titlebar">
           <div class="dot-red"></div>
           <div class="dot-amber"></div>
           <div class="dot-green"></div>
-          <div class="mockup-titlebar-label">SonoCube — Study Analysis</div>
+          <div class="mockup-titlebar-label">SonoCube v1.4.0</div>
         </div>
-        <div class="mockup-body">
-          <div class="mock-ef-row">
-            <div class="mock-stat">
-              <div class="mock-stat-label">EF (Median)</div>
-              <div class="mock-stat-value" style="color:#52c27a">62.4</div>
-              <div class="mock-stat-unit">%</div>
-            </div>
-            <div class="mock-stat">
-              <div class="mock-stat-label">Std Dev</div>
-              <div class="mock-stat-value" style="color:#e8a217">3.1</div>
-              <div class="mock-stat-unit">%</div>
-            </div>
-            <div class="mock-stat">
-              <div class="mock-stat-label">Frames</div>
-              <div class="mock-stat-value" style="color:#00b4cc">48</div>
-              <div class="mock-stat-unit">fr</div>
-            </div>
-          </div>
-
-          <div class="mock-ef-bar-wrap">
-            <div class="mock-ef-bar-label">EF Range Reference</div>
-            <div class="mock-ef-track">
-              <div class="ef-zone-red"></div>
-              <div class="ef-zone-amber"></div>
-              <div class="ef-zone-green"></div>
-              <div class="ef-marker"></div>
-            </div>
-            <div class="ef-zone-labels">
-              <span style="color:#e05252">Reduced &lt;40%</span>
-              <span style="color:#e8a217">40–54%</span>
-              <span style="color:#52c27a">Normal ≥55%</span>
-            </div>
-          </div>
-
-          <div class="mock-stability">
-            <div class="stability-dot"></div>
-            <div class="stability-text">HIGH Stability</div>
-            <div class="stability-sub">Std Dev 3.1% · 48 frames</div>
-          </div>
-
-          <div class="mock-chart">
-            <svg viewBox="0 0 480 64" preserveAspectRatio="none">
-              <polyline
-                points="0,40 20,38 40,36 60,34 80,32 100,30 120,35 140,38 160,36 180,30 200,28 220,26 240,30 260,34 280,32 300,28 320,26 340,30 360,28 380,26 400,28 420,30 440,28 460,26 480,24"
-                fill="none" stroke="#00b4cc" stroke-width="1.5" opacity=".8"
-              />
-              <polyline
-                points="0,40 20,38 40,36 60,34 80,32 100,30 120,35 140,38 160,36 180,30 200,28 220,26 240,30 260,34 280,32 300,28 320,26 340,30 360,28 380,26 400,28 420,30 440,28 460,26 480,24"
-                fill="url(#chartGrad)" stroke="none" opacity=".15"
-              />
-              <defs>
-                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#00b4cc"/>
-                  <stop offset="100%" stop-color="transparent"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-        </div>
+        <img src="assets/screenshots/hero.png" alt="SonoCube 분석 화면"
+          onerror="this.parentElement.innerHTML='<div style=\'aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;background:var(--bg-3);color:var(--text-dim);font-size:12px;flex-direction:column;gap:8px;padding:20px;text-align:center\'><svg width=32 height=32 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1\' opacity=\'.3\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>assets/screenshots/hero.png</div>'" />
       </div>
     </div>
   </div>
@@ -736,6 +768,186 @@
       <p>모든 분석 결과는 자동으로 히스토리에 저장됩니다. 날짜, EF, 파일명으로 검색하고, 이전 케이스의 PDF를 바로 열거나 CSV로 내보낼 수 있습니다.</p>
     </div>
 
+  </div>
+</section>
+
+<!-- ── FEATURE DETAIL ── -->
+<section id="feature-detail" style="background:var(--bg)">
+  <div class="section-label">In Detail</div>
+  <h2 class="section-title">구현 기능 상세</h2>
+
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(event,'ai')">AI 분석 엔진</button>
+    <button class="tab-btn" onclick="switchTab(event,'study')">Study 탭</button>
+    <button class="tab-btn" onclick="switchTab(event,'pdf')">PDF 리포트</button>
+    <button class="tab-btn" onclick="switchTab(event,'history')">History 탭</button>
+    <button class="tab-btn" onclick="switchTab(event,'settings')">Settings 탭</button>
+    <button class="tab-btn" onclick="switchTab(event,'notimpl')">미구현 항목</button>
+  </div>
+
+  <!-- AI -->
+  <div class="tab-pane active" id="tab-ai">
+    <p class="feat-category">LVSegEngine (lvseg_fp32.onnx · 1.8 MB)</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>프레임별 LV(좌심실) 분할 마스크 생성 — U-Net 기반, Dice=0.930</li>
+      <li><span class="feat-dot"></span>ED/ES 프레임 자동 검출 — LV 면적 곡선 스무딩 + 시간순서 제약으로 노이즈 극소값 방지</li>
+      <li><span class="feat-dot"></span>LVSegEngine 로드 실패 시 중심 밝기 heuristic으로 자동 폴백</li>
+    </ul>
+    <p class="feat-category">SonoCubeV2b (sonocube_v2b_fp32.onnx · 60 KB)</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>ED+ES 프레임 쌍 입력 (6채널, 96×96) → EF(%) 단일 추론</li>
+      <li><span class="feat-dot"></span>EchoNet TEST 기준: MAE 8.01%, r=0.614, Bias +0.49%</li>
+      <li><span class="feat-dot"></span>Simpson 근사 EF 계산 — 마스크 면적 기반, 참고용 제공</li>
+    </ul>
+  </div>
+
+  <!-- Study -->
+  <div class="tab-pane" id="tab-study">
+    <p class="feat-category">파일 처리</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>AVI, MP4, MOV, MKV, DICOM 파일 열기 — 드래그 앤 드롭 + 파일 선택 모두 지원</li>
+      <li><span class="feat-dot"></span>영상 메타데이터 표시 (프레임 수, FPS, 해상도)</li>
+    </ul>
+    <p class="feat-category">뷰어</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>프레임별 탐색 — 슬라이더 및 키보드 ←/→</li>
+      <li><span class="feat-dot"></span>LV 마스크 overlay 토글 — ED/ES 프레임에 시안 반투명 표시</li>
+      <li><span class="feat-dot"></span>ED/ES 프레임 태그 표시 및 바로가기 버튼 (E / S 키)</li>
+    </ul>
+    <p class="feat-category">수동 보정</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>ED/ES 프레임 수동 지정 후 재분석 — Set as ED / Set as ES (Ctrl+E / Ctrl+D)</li>
+      <li><span class="feat-dot"></span>수동 지정 여부 PDF 리포트에 자동 기록</li>
+    </ul>
+    <p class="feat-category">결과 패널</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>EF 수치 색상 코딩 — ≥55% 초록 / 40–54% 주황 / &lt;40% 빨강</li>
+      <li><span class="feat-dot"></span>EF 범위 바 시각화 (min/max 범위 포함)</li>
+      <li><span class="feat-dot"></span>EF &lt;40% 자동 경고 배너</li>
+      <li><span class="feat-dot"></span>Prediction Stability 표시 (High / Medium / Low)</li>
+      <li><span class="feat-dot"></span>Simpson 참고 EF 및 EDV/ESV 상대값 표시</li>
+      <li><span class="feat-dot"></span>Quality Warnings — 프레임 수 부족 / 밝기 이상 / 변동성 과다 등 심각도별 분류</li>
+      <li><span class="feat-dot"></span>Research use only 모델 한계 안내 배너</li>
+    </ul>
+    <p class="feat-category">EF Curve</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>분석 후 프레임별 EF 곡선 시각화 (matplotlib 임베드)</li>
+    </ul>
+  </div>
+
+  <!-- PDF -->
+  <div class="tab-pane" id="tab-pdf">
+    <p class="feat-category">자동 생성 라이트 테마 PDF (A4)</p>
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>케이스 정보 — 파일명, 프레임 수, FPS, 분석 시각</li>
+      <li><span class="feat-dot"></span>EF 결과 테이블 + 범위 바 이미지</li>
+      <li><span class="feat-dot"></span>Quality Warnings — 심각도별 색상 구분 (HIGH / MODERATE / INFO)</li>
+      <li><span class="feat-dot"></span>Frame-wise EF Curve 이미지</li>
+      <li><span class="feat-dot"></span>ED/ES 스냅샷 (LV 마스크 overlay 포함)</li>
+      <li><span class="feat-dot"></span>미지원 지표 안내 (EDV/ESV 절대값 등)</li>
+      <li><span class="feat-dot"></span>모델 정보 + 메타데이터 테이블</li>
+      <li><span class="feat-dot"></span>Research use only 푸터 (전 페이지 공통)</li>
+    </ul>
+  </div>
+
+  <!-- History -->
+  <div class="tab-pane" id="tab-history">
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>모든 분석 결과 자동 저장 (output/history.json 누적)</li>
+      <li><span class="feat-dot"></span>날짜 / EF / 파일명 실시간 검색 필터</li>
+      <li><span class="feat-dot"></span>EF 수치 색상 코딩 표시 (목록 내 인라인)</li>
+      <li><span class="feat-dot"></span>더블클릭 → 해당 케이스 PDF 바로 열기</li>
+      <li><span class="feat-dot"></span>우클릭 컨텍스트 메뉴 — PDF 열기 / JSON 보기 / 삭제</li>
+      <li><span class="feat-dot"></span>전체 CSV 내보내기</li>
+      <li><span class="feat-dot"></span>전체 기록 삭제</li>
+    </ul>
+  </div>
+
+  <!-- Settings -->
+  <div class="tab-pane" id="tab-settings">
+    <ul class="feat-list">
+      <li><span class="feat-dot"></span>AI 모델 선택 — SonoCubeV2b / w_075 / EchoNet R2Plus1D</li>
+      <li><span class="feat-dot"></span>출력 디렉토리 설정</li>
+      <li><span class="feat-dot"></span>로그 파일 열기</li>
+      <li><span class="feat-dot"></span>히스토리 초기화</li>
+      <li><span class="feat-dot"></span>설정 파일 자동 저장 (sonocube_settings.json)</li>
+    </ul>
+  </div>
+
+  <!-- Not implemented -->
+  <div class="tab-pane" id="tab-notimpl">
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">현재 버전에 포함되지 않은 기능입니다. 코드 구조 또는 UI 필드가 존재하더라도 실제 동작은 제공되지 않습니다.</p>
+    <table class="not-impl-table">
+      <thead><tr><th>항목</th><th>상태</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>3D LV 재구성</td>
+          <td><span class="status-badge status-struct">코드 구조만 존재</span></td>
+          <td>모델 미탑재</td>
+        </tr>
+        <tr>
+          <td>EDV/ESV 절대값 (mL)</td>
+          <td><span class="status-badge status-approx">근사치만 제공</span></td>
+          <td>픽셀 캘리브레이션(mm/pixel) 없음</td>
+        </tr>
+        <tr>
+          <td>병변(Tumor) 감지</td>
+          <td><span class="status-badge status-none">미구현</span></td>
+          <td>UI 필드 없음</td>
+        </tr>
+        <tr>
+          <td>Windows 배포</td>
+          <td><span class="status-badge status-wip">spec 파일만 존재</span></td>
+          <td>빌드 미진행 (Coming Soon)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── SCREENSHOTS ── -->
+<section id="screenshots" style="background:var(--bg-2)">
+  <div class="section-label">Screenshots</div>
+  <h2 class="section-title">앱 화면</h2>
+  <div class="screenshot-grid">
+
+    <div class="screenshot-item">
+      <img src="assets/screenshots/study.png" alt="Study 탭 — 분석 완료 화면"
+        onerror="this.outerHTML='<div class=\'screenshot-placeholder\'><svg width=32 height=32 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>assets/screenshots/study.png</div>'" />
+      <div class="screenshot-caption">Study 탭 — EF 분석 완료 화면</div>
+    </div>
+
+    <div class="screenshot-item">
+      <img src="assets/screenshots/result.png" alt="결과 패널 — EF 범위 바"
+        onerror="this.outerHTML='<div class=\'screenshot-placeholder\'><svg width=32 height=32 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>assets/screenshots/result.png</div>'" />
+      <div class="screenshot-caption">결과 패널 — EF 범위 바 및 Quality Warnings</div>
+    </div>
+
+    <div class="screenshot-item">
+      <img src="assets/screenshots/history.png" alt="History 탭"
+        onerror="this.outerHTML='<div class=\'screenshot-placeholder\'><svg width=32 height=32 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>assets/screenshots/history.png</div>'" />
+      <div class="screenshot-caption">History 탭 — 분석 이력 검색 및 관리</div>
+    </div>
+
+    <div class="screenshot-item">
+      <img src="assets/screenshots/pdf.png" alt="PDF 리포트"
+        onerror="this.outerHTML='<div class=\'screenshot-placeholder\'><svg width=32 height=32 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>assets/screenshots/pdf.png</div>'" />
+      <div class="screenshot-caption">자동 생성 PDF 리포트 — 케이스 요약</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── DEMO VIDEO ── -->
+<section id="demo" style="background:var(--bg)">
+  <div class="section-label">Demo</div>
+  <h2 class="section-title">작동 영상</h2>
+  <p class="section-sub" style="margin-bottom:28px;">AVI 파일 드래그부터 PDF 리포트 생성까지 전체 분석 흐름을 확인합니다.</p>
+  <div class="video-wrap">
+    <video id="demo-video" controls preload="metadata"
+      onerror="this.outerHTML='<div class=\'video-placeholder\'><svg width=48 height=48 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1\'><polygon points=\'5 3 19 12 5 21 5 3\'/></svg>assets/demo.mp4 파일을 넣으면 여기에 재생됩니다.</div>'">
+      <source src="assets/demo.mp4" type="video/mp4" />
+    </video>
   </div>
 </section>
 
@@ -898,6 +1110,16 @@
     Ouyang, D. et al. "Video-based AI for beat-to-beat assessment of cardiac function." <em>Nature</em> 580, 252–256 (2020).
   </div>
 </footer>
+
+<script>
+function switchTab(e, id) {
+  const section = e.target.closest('section');
+  section.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  section.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  section.querySelector('#tab-' + id).classList.add('active');
+}
+</script>
 
 </body>
 </html>
